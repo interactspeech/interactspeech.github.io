@@ -1,0 +1,29 @@
+{
+    "original_dialog_id": "",
+    "dialog_index": 509618,
+    "processed_dialogue": "A: Thank you so much for everything, Miss Smith. I really appreciate all that you've done for [interrupt] helping me prepare for these exams.\nB: Oh, it was nothing. But before you go on, I wanted to ask\u2014how are you feeling about the upcoming exams?\nA: I'm a bit nervous, to be honest. But your support has really helped me. I was just saying that you've helped me more than you know.\nB: I'm glad to hear that. Remember, you're a great student, Amar, and I have full confidence in you.\nA: Thank you, Miss Smith.",
+    "speakerA_time": [
+        [
+            0,
+            114944
+        ],
+        [
+            251120,
+            411888
+        ],
+        [
+            528624,
+            553968
+        ]
+    ],
+    "speakerB_time": [
+        [
+            104944,
+            251120
+        ],
+        [
+            411888,
+            528624
+        ]
+    ]
+}

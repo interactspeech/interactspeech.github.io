@@ -1,678 +1,280 @@
-{:.no_toc}
+---
+layout: default
+title: "InteractSpeech: A Speech Dialogue Interaction Corpus for Speech Language Modeling"
+
+---
+
+<h2 style="text-align: center; color: #333333; font-weight: bold;">Authors</h2>
+<p style="text-align: center; color: #336699; font-weight: bold;">
+Shengpeng Ji<sup>*</sup>, Yifu Chen<sup>*</sup>, Xize Cheng<sup>*</sup>, 
+Minghui Fang, Jialong Zuo, Wenrui Liu, Qian Chen, 
+Zhou Zhao<sup>✉</sup>
+</p>
+<p style="text-align: center; color: #333333;">
+<sup>*</sup>Equal contribution &nbsp;&nbsp; <sup>✉</sup>Corresponding author
+</p>
+<p style="text-align: center;">
+<a href="#" style="color: #ff6600; text-decoration: none; font-weight: bold;">[Paper]</a> |
+<a href="#" style="color: #ff6600; text-decoration: none; font-weight: bold;">[Code]</a> 
+</p>
+
 
 ## Overview
-<p align="justify">
-In this paper, we present ControlSpeech, a text-to-speech (TTS) system capable of fully cloning the speaker's voice and enabling arbitrary control and adjustment of speaking style, merely based on a few seconds of audio prompt and a simple textual style description prompt. Prior zero-shot TTS models and controllable TTS models either could only mimic the speaker's voice without further control and adjustment capabilities or were unrelated to speaker-specific voice generation. Therefore, ControlSpeech focuses on a more challenging new task—a TTS system with controllable timbre, content, and style at the same time. ControlSpeech takes speech prompts, content prompts, and style prompts as inputs and utilizes bidirectional attention and mask-based parallel decoding to capture corresponding codec representations in a discrete decoupling codec space. Moreover, we discovered the issue of text style controllability in a many-to-many mapping fashion and proposed the SMSD module to resolve this problem. SMSD module which is based on Gaussian mixture density networks, is designed to further mix sample style semantic information and generate speech with more diverse styles. In terms of experiments, we open source a controllable model toolkit called ControlToolkit with a new style controllable dataset, some replicated baseline models and propose new metrics to evaluate both the control capability and the quality of generated audio in ControlSpeech. The relevant ablation studies validate the necessity of each component in ControlSpeech is necessary.  We hope that ControlSpeech can establish the next foundation paradigm of controllable speech synthesis. 
+
+<p align="justify" style="font-family: 'Times New Roman', sans-serif; font-weight: 800; font-size: 20px;  color: #333;">
+ We present a speech interaction dialogue dataset called InteractSpeech, which designed to enable end-to-end speech language models such as GPT-4o to listen and speak simultaneously. Currently, speech dialogue models lack the ability to interact with humans in real-time spoken scenarios, such as handling interruptions when generated content is unsatisfactory or when new ideas arise. To address this, we have created a 150-hour English interactive dialogue dataset consisting of 90000  dialogue texts to facilitate more realistic and interactive conversational scenarios. On one hand, we used prompt programming on text dialogue datasets to prompt language models to generate corresponding interactive texts, and then employed advanced speech synthesis models to produce dual-track audio clips according to various requirements. On the other hand, we utilized publicly available internet dialogue data, applying speaker overlap detection and voice consistency models to filter interactive segments in speech dialogues. In our experiments, we verified the validity of interactive texts by fine-tuning LLaMA3-8B using LoRA on InteractSpeech.
+</p>
+
+## Processing Pipeline
+
+<tr> 
+    <td style="text-align: center; border: none;">
+        <img src="assets/image/overview.png" style="width:150%; height: auto; border: none; margin-bottom: -100px;" alt="Processing Pipeline"/>
+    </td>
+</tr>
+<p style="text-align: center; font-style: italic; color: gray;">
+    Figure 1. The overall pipeline of InteractSpeech.
 </p>
 
 
-## Model Architecture
 
 <p align="justify">
-Figure (a) illustrates the overall architecture of ControlSpeech, which is an encoder-decoder-based parallel disentangled codec generation model. Figure (b) depicts the SMSD module, which alleviates the many-to-many problem in style control by sampling from the style mixture semantic distribution and incorporating an additional noise perturbator. Figure (c) shows the basic disentanglement process of the codec generator. Through masking, the codec can generate discrete codec representations in a fully non-autoregressive manner.
+Figure (1) illustrates the overall pipeline of InteractSpeech.InteractSpeech combines synthetic and real-world speech to provide a rich variety of interruption scenarios. For the synthetic part, we process the original conversations into interruption scenarios through GPT-4o based on high-quality textual dialog data such as SODA, Dialogsum, PLACES, and MultiWOZ 2.2, and convert them into the speech by using the sota text-to-speech model and organize it into two audio formats, a separate audio format for each speaker, and a dual-track audio format for the complete conversation. The synthetic part in the InteractSpeech contains about 8000 scene dialogs and the total duration is about 112 hours. We pay special attention to the authenticity of the dialogs, and strictly control the frequency of interruptions to avoid frequent interruptions destroying the fluency of the dialogs. Each speaker's utterances were timestamped to ensure precise voice dialogue alignment. The synthetic data is accompanied by transcribed text, timestamps, and speech, so that users can choose to use them according to their different requirements. For the real part, we got about 38 hours of speech about dialogue and processed them through our unique filtering mechanism. In addition, we also provide one hour of manually labeled test set with precisely timestamped interruptions to test the model performance. At the same time, short intonations or affirmations (e.g., “ok”, “yeah”) that are common in real life are not considered as interruptions, and are kept as negative samples for model differentiation to enhance the robustness of the model.
 </p>
 
-<table>
-    <tr>
-        <td ><center><img src="assets/image/overview.png"/> </center></td>
-    </tr>
-</table>
 
-<p align="center">Figure.1 The overall architecture of ControlSpeech.</p>
+<h2 style="text-align: center; color: #2f855a; font-family: Arial, sans-serif; font-weight: bold; margin-bottom: 30px;">Complete Prompts</h2>
+
+<!-- 第一部分展示 -->
+<div style="background-color: #eef5fc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+    <h3 style="color: #1e40af; font-family: Arial, sans-serif; margin-bottom: 15px;">First Prompt Template</h3>
+    <pre style="background-color: #f5faff; padding: 15px; border-radius: 5px; font-family: Arial, sans-serif; font-size: 14px; white-space: pre-wrap; line-height: 1.5;">
+<b>Please adapt the dialogue into a version that includes interruption scenarios</b> according to the requirements and dialogue content provided below.
+<b>Strictly follow the following requirements:</b>
+1. <b>Mark the interruption position:</b> When the other party has not finished speaking or the key information has not been expressed, choose the right time to interrupt and ensure the diversity of interruption position. Just add the [interrupt] mark after the interrupted word. Avoid interrupting when the other party is almost finished or about to finish.
+2. <b>The inserted interruption must be highly relevant to the context</b> and the topic of the conversation, and help to promote the in-depth conversation or clarify key issues. Ensure that the transition of the interruption is natural.
+3. <b>After the interruption, the interrupter is not aware</b> of the content that the other party originally did not finish. The unfinished content should be unrelated to the interruption event, and choose whether to mention it again based on the scenario to ensure that the logic is correct and in line with the real scene.
+4. The number of interruptions should not exceed two times to ensure the naturalness and fluency of the conversation. 
+5. Make sure each interruption is <b>meaningful and valuable</b>, and the content is not repeated. Keep the content and tone consistent with the character identity.
+
+Example:
+A: At yesterday's meeting, we discussed the new project plan and decided to start implementing it next quarter. This plan mainly involves resource allocation and team collaboration. We hope to [interrupt]...
+B: Sorry to interrupt, I just thought of a question, about our existing budget, is it enough to support the implementation of this plan?
+A: This plan does need more funding, but we have also considered some additional funding sources. However, I haven't mentioned our use of automation tools yet [interrupt]...
+B: Automation tools are certainly important, but I am more concerned about whether our team's current skills can match the requirements of these tools.
+
+<b>Output requirements:</b> Only output the modified and interrupted conversation content, do not output any other content. Strictly follow the following format:
+A: [Conversation content]
+B: [Conversation content]
+</pre>
+</div>
+
+<!-- 第二部分展示 -->
+<div style="background-color: #fef6e4; padding: 20px; border-radius: 8px;">
+    <h3 style="color: #b45309; font-family: Arial, sans-serif; margin-bottom: 15px;">Second Prompt Template</h3>
+    <pre style="background-color: #fff9e6; padding: 15px; border-radius: 5px; font-family: Arial, sans-serif; font-size: 14px; white-space: pre-wrap; line-height: 1.5;">
+<b>Please complete the sentence with the interruption mark [interrupt]</b> according to the content of the conversation to ensure the naturalness and logical coherence of the conversation.
+<b>Requirements:</b>
+1. <b>Fill in the sentence after the interruption mark [interrupt]</b> reasonably to make the conversation flow naturally. The continuation must be meaningful.
+2. Ensure that the continued conversation is <b>natural and fluent</b>, in line with the actual scene and interpersonal communication norms.
+3. Keep the [interrupt] mark during the continuation process, and treat the subsequent content as unspoken content. The interrupter is unaware of these contents.
+
+Example:
+Before continuing:
+A: At yesterday's meeting, we discussed the new project plan and decided to start implementing it next quarter. We hope to [interrupt]...
+B: Sorry to interrupt, I just thought of a question, about our existing budget, is it enough to support the implementation of this plan?
+
+<b>Continuation:</b>
+A: We hope to [interrupt] improve resource utilization in this process and manage our resources more effectively.
+B: Sorry to interrupt, I just thought of a question, about our existing budget, is it enough to support the implementation of this plan?
+
+<b>Output requirements:</b> Only output the content of the continued conversation, strictly in the following format:
+A: [Conversation content]
+B: [Conversation content]
+</pre>
+</div>
+
+<head>   
+    <!-- 加载 FontAwesome 图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<!-- 在页面顶部加载 wavesurfer.js -->
+<script src="wavesurfer.js"></script>
+
+<!-- Demo 标题 -->
+<h2 style="text-align: center; font-weight: bold; color: #333; font-family: Arial, sans-serif; margin-bottom: 30px;">Dialogue Demo</h2>
+
+<!-- 第一场景 -->
+<div style="border: 1px solid #ccc; background-color: #eef7f9; padding: 20px; margin-bottom: 30px;">
+    <!-- 标题 -->
+    <p style="font-size: 18px; font-weight: bold; font-style: italic; text-align: center; margin-bottom: 10px;">Scenario 1 - Full Conversation (Stereo)</p>
+    <!-- 完整对话波形 -->
+    <div id="waveform_1_full" style="margin-bottom: 20px;"></div>
+    <div style="text-align: center;">
+        <button id="play_button_1_full" onclick="wavesurfer_1_full.playPause()" style="background-color: #1f3b64; color: white; padding: 10px 20px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer;">
+            <i class="fa fa-play"></i> Play / <i class="fa fa-pause"></i> Pause
+        </button>
+    </div>
+
+    <!-- 对话文本及时间戳展示 -->
+    <div style="margin-top: 20px;">
+        <p style="font-size: 16px; font-weight: bold; color: #333;">Dialogue Transcript with Timestamps:</p>
+        <div style="background-color: #fff; padding: 10px; border-radius: 5px;">
+            <p><span style="color: #1f3b64; font-weight: bold;">A (0s - 114.944s):</span> Thank you so much for everything, Miss Smith. I really appreciate all that you've done for [interrupt] helping me prepare for these exams.</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">B (104.944s - 251.120s):</span> Oh, it was nothing. But before you go on, I wanted to ask—how are you feeling about the upcoming exams?</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">A (251.120s - 411.888s):</span> I'm a bit nervous, to be honest. But your support has really helped me. I was just saying that you've helped me more than you know.</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">B (411.888s - 528.624s):</span> I'm glad to hear that. Remember, you're a great student, Amar, and I have full confidence in you.</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">A (528.624s - 553.968s):</span> Thank you, Miss Smith.</p>
+        </div>
+    </div>
+
+    <!-- 分别展示两个单轨音频 -->
+    <p style="font-size: 18px; font-weight: bold; font-style: italic; text-align: center; margin-top: 30px; margin-bottom: 10px;">Scenario 1 - Speaker 1</p>
+    <div id="waveform_1_speaker1" style="margin-bottom: 20px;"></div>
+    <div style="text-align: center;">
+        <button id="play_button_1_speaker1" onclick="wavesurfer_1_speaker1.playPause()" style="background-color: #1f3b64; color: white; padding: 10px 20px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer;">
+            <i class="fa fa-play"></i> Play / <i class="fa fa-pause"></i> Pause
+        </button>
+    </div>
+
+    <p style="font-size: 18px; font-weight: bold; font-style: italic; text-align: center; margin-top: 30px; margin-bottom: 10px;">Scenario 1 - Speaker 2</p>
+    <div id="waveform_1_speaker2" style="margin-bottom: 20px;"></div>
+    <div style="text-align: center;">
+        <button id="play_button_1_speaker2" onclick="wavesurfer_1_speaker2.playPause()" style="background-color: #1f3b64; color: white; padding: 10px 20px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer;">
+            <i class="fa fa-play"></i> Play / <i class="fa fa-pause"></i> Pause
+        </button>
+    </div>
+</div>
+
+<!-- 第二场景 -->
+<div style="border: 1px solid #ccc; background-color: #f9f0e5; padding: 20px; margin-bottom: 30px;">
+    <!-- 标题 -->
+    <p style="font-size: 18px; font-weight: bold; font-style: italic; text-align: center; margin-bottom: 10px;">Scenario 2 - Full Conversation (Stereo)</p>
+    <!-- 完整对话波形 -->
+    <div id="waveform_2_full" style="margin-bottom: 20px;"></div>
+    <div style="text-align: center;">
+        <button id="play_button_2_full" onclick="wavesurfer_2_full.playPause()" style="background-color: #1f3b64; color: white; padding: 10px 20px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer;">
+            <i class="fa fa-play"></i> Play / <i class="fa fa-pause"></i> Pause
+        </button>
+    </div>
+
+    <!-- 对话文本及时间戳展示 -->
+    <div style="margin-top: 20px;">
+        <p style="font-size: 16px; font-weight: bold; color: #333;">Dialogue Transcript with Timestamps:</p>
+        <div style="background-color: #fff; padding: 10px; border-radius: 5px;">
+            <p><span style="color: #1f3b64; font-weight: bold;">A (0s - 40.448s):</span> Wow, we look amazing!</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">B (40.448s - 122.368s):</span> I know, right? We should totally walk around like [interrupt] we own the place and let everyone see how incredible we look.</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">A (112.368s - 260.848s):</span> Actually, before we do that, do you think we should take some pictures first? I mean, we need to capture this moment!</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">B (260.848s - 345.072s):</span> Absolutely! But after that, let's go show everyone how glamorous we are!</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">A (345.072s - 381.936s):</span> I feel like a movie star!</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">B (381.936s - 460.784s):</span> Me too! We should walk around like we're on a [interrupt] runway, making sure everyone notices our stunning outfits.</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">A (450.784s - 598.752s):</span> Wait, let's make sure we have the perfect poses down before we start. We need to nail that red carpet look!</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">B (598.752s - 661.728s):</span> Good idea! Let's start strutting our stuff!</p>
+        </div>
+    </div>
+
+    <!-- 分别展示两个单轨音频 -->
+    <p style="font-size: 18px; font-weight: bold; font-style: italic; text-align: center; margin-top: 30px; margin-bottom: 10px;">Scenario 2 - Speaker 1</p>
+    <div id="waveform_2_speaker1" style="margin-bottom: 20px;"></div>
+    <div style="text-align: center;">
+        <button id="play_button_2_speaker1" onclick="wavesurfer_2_speaker1.playPause()" style="background-color: #1f3b64; color: white; padding: 10px 20px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer;">
+            <i class="fa fa-play"></i> Play / <i class="fa fa-pause"></i> Pause
+        </button>
+    </div>
+
+    <p style="font-size: 18px; font-weight: bold; font-style: italic; text-align: center; margin-top: 30px; margin-bottom: 10px;">Scenario 2 - Speaker 2</p>
+    <div id="waveform_2_speaker2" style="margin-bottom: 20px;"></div>
+    <div style="text-align: center;">
+        <button id="play_button_2_speaker2" onclick="wavesurfer_2_speaker2.playPause()" style="background-color: #1f3b64; color: white; padding: 10px 20px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer;">
+            <i class="fa fa-play"></i> Play / <i class="fa fa-pause"></i> Pause
+        </button>
+    </div>
+</div>
 
 <script>
-function pauseOthers(ele) {
-    $("audio").not(ele).each(function (index, audio) {audio.pause();});
-}
+    // 第一场景
+    var wavesurfer_1_full = WaveSurfer.create({
+        container: '#waveform_1_full',
+        waveColor: 'violet',
+        progressColor: 'purple',
+        responsive: true,
+        height: 150,
+        splitChannels: true,
+        normalize: true,
+        backgroundColor: '#f0f0f0',
+        cursorWidth: 1,
+        cursorColor: '#333'
+    });
+    wavesurfer_1_full.load('./assets/audio/interactspeech_demo_syn/SODA_PROCESSED--train--509618/test.wav');
+
+    var wavesurfer_1_speaker1 = WaveSurfer.create({
+        container: '#waveform_1_speaker1',
+        waveColor: 'violet',
+        progressColor: 'purple',
+        responsive: true,
+        height: 150,
+        splitChannels: false,
+        normalize: true,
+        backgroundColor: '#f0f0f0',
+        cursorWidth: 1,
+        cursorColor: '#333'
+    });
+    wavesurfer_1_speaker1.load('./assets/audio/interactspeech_demo_syn/SODA_PROCESSED--train--509618/dialogue_speakera.wav');
+
+    var wavesurfer_1_speaker2 = WaveSurfer.create({
+        container: '#waveform_1_speaker2',
+        waveColor: 'violet',
+        progressColor: 'purple',
+        responsive: true,
+        height: 150,
+        splitChannels: false,
+        normalize: true,
+        backgroundColor: '#f0f0f0',
+        cursorWidth: 1,
+        cursorColor: '#333'
+    });
+    wavesurfer_1_speaker2.load('./assets/audio/interactspeech_demo_syn/SODA_PROCESSED--train--509618/dialogue_speakerb.wav');
+
+    // 第二场景
+    var wavesurfer_2_full = WaveSurfer.create({
+        container: '#waveform_2_full',
+        waveColor: 'violet',
+        progressColor: 'purple',
+        responsive: true,
+        height: 150,
+        splitChannels: true,
+        normalize: true,
+        backgroundColor: '#f0f0f0',
+        cursorWidth: 1,
+        cursorColor: '#333'
+    });
+    wavesurfer_2_full.load('./assets/audio/interactspeech_demo_syn/SODA_PROCESSED--train--1004451/test.wav');
+
+    var wavesurfer_2_speaker1 = WaveSurfer.create({
+        container: '#waveform_2_speaker1',
+        waveColor: 'violet',
+        progressColor: 'purple',
+        responsive: true,
+        height: 150,
+        splitChannels: false,
+        normalize: true,
+        backgroundColor: '#f0f0f0',
+        cursorWidth: 1,
+        cursorColor: '#333'
+    });
+    wavesurfer_2_speaker1.load('./assets/audio/interactspeech_demo_syn/SODA_PROCESSED--train--1004451/dialogue_speakera.wav');
+
+    var wavesurfer_2_speaker2 = WaveSurfer.create({
+        container: '#waveform_2_speaker2',
+        waveColor: 'violet',
+        progressColor: 'purple',
+        responsive: true,
+        height: 150,
+        splitChannels: false,
+        normalize: true,
+        backgroundColor: '#f0f0f0',
+        cursorWidth: 1,
+        cursorColor: '#333'
+    });
+    wavesurfer_2_speaker2.load('./assets/audio/interactspeech_demo_syn/SODA_PROCESSED--train--1004451/dialogue_speakerb.wav');
 </script>
-
-<style>
-.main-content table {
-    display: inline-table;
-}
-table {
-    table-layout:fixed;
-    width: 100%;
-    overflow: hidden;
-}
-#player{
-    width: 100%;
-}
-</style>
-
-## Compare with baselines
-<p align="justify">We provide a range of audio to exemplify the differences between ControlSpeech and the baseline models (InstructTTS, PromptStyle and PromptTTS).</p>
-
-<p>
-<b>Content Prompt:</b> Here a customer came in.<br>
-<b>Style Prompt:</b> The speaker's tone was deep and captivating.<br>
-<b>Voice Prompt:</b><audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/voice/1.wav" type="audio/mpeg"></audio>
-</p> 
-<table>
-    <tr>
-        <th> GT(w/o Style)</th>
-        <th> InstructTTS</th>
-        <th> PromptTTS</th>
-        <th> PromptStyle</th>
-        <th> ControlSpeech(Ours)</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/1/GT.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/1/InstructTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/1/PromptTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/1/PromptStyle.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/1/ControlSpeech.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>
-
-<p>
-<b>Content Prompt:</b> He would have withdrawn from the feast had not the noise of voices allayed the smart.<br>
-<b>Style Prompt:</b> A young speaker's low-energy, whispered speech is rapid.<br>
-<b>Voice Prompt:</b><audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/voice/2.wav" type="audio/mpeg"></audio>
-</p> 
-<table>
-    <tr>
-        <th> GT(w/o Style)</th>
-        <th> InstructTTS</th>
-        <th> PromptTTS</th>
-        <th> PromptStyle</th>
-        <th> ControlSpeech(Ours)</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/2/GT.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/2/InstructTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/2/PromptTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/2/PromptStyle.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/2/ControlSpeech.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>
-
-<p>
-<b>Content Prompt:</b> Yes, captain, maybe so.<br>
-<b>Style Prompt:</b> A speaker, maintaining a standard pitch, engages in unhurried speech with a touch of normal energy.<br>
-<b>Voice Prompt:</b><audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/voice/3.wav" type="audio/mpeg"></audio>
-</p> 
-<table>
-    <tr>
-        <th> GT(w/o Style)</th>
-        <th> InstructTTS</th>
-        <th> PromptTTS</th>
-        <th> PromptStyle</th>
-        <th> ControlSpeech(Ours)</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/3/GT.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/3/InstructTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/3/PromptTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/3/PromptStyle.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/3/ControlSpeech.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>
-
-<p>
-<b>Content Prompt:</b> He dropped the lighted shaving in a safe spot and put up his hands.<br>
-<b>Style Prompt:</b> Speaker's speaking rate is normal, despite speaker's voice's high pitch.<br>
-<b>Voice Prompt:</b><audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/voice/4.wav" type="audio/mpeg"></audio>
-</p> 
-<table>
-    <tr>
-        <th> GT(w/o Style)</th>
-        <th> InstructTTS</th>
-        <th> PromptTTS</th>
-        <th> PromptStyle</th>
-        <th> ControlSpeech(Ours)</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/4/GT.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/4/InstructTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/4/PromptTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/4/PromptStyle.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/4/ControlSpeech.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>
-
-<p>
-<b>Content Prompt:</b> He never comes to the pump room, I suppose?<br>
-<b>Style Prompt:</b> The speaker's energy is low, yet speaker's whispering speed is ordinary.<br>
-<b>Voice Prompt:</b><audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/voice/5.wav" type="audio/mpeg"></audio>
-</p> 
-<table>
-    <tr>
-        <th> GT(w/o Style)</th>
-        <th> InstructTTS</th>
-        <th> PromptTTS</th>
-        <th> PromptStyle</th>
-        <th> ControlSpeech(Ours)</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/5/GT.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/5/InstructTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/5/PromptTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/5/PromptStyle.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/5/ControlSpeech.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>
-
-<p>
-<b>Content Prompt:</b> Then she cried quickly, "Stay, brother, stay! do not drink, or you will become a wild beast, and tear me to pieces."<br>
-<b>Style Prompt:</b> Speaking in a balanced tone and pace, speaker gets speaker's point across.<br>
-<b>Voice Prompt:</b><audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/voice/6.wav" type="audio/mpeg"></audio>
-</p> 
-<table>
-    <tr>
-        <th> GT(w/o Style)</th>
-        <th> InstructTTS</th>
-        <th> PromptTTS</th>
-        <th> PromptStyle</th>
-        <th> ControlSpeech(Ours)</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/6/GT.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/6/InstructTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/6/PromptTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/6/PromptStyle.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/6/ControlSpeech.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>
-
-
-<p>
-<b>Content Prompt:</b> Fort lyon, colorado territory, december, eighteen seventy one.<br>
-<b>Style Prompt:</b> The speaker talks at a moderate speed, neither too fast nor slow.<br>
-<b>Voice Prompt:</b><audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/voice/7.wav" type="audio/mpeg"></audio>
-</p> 
-<table>
-    <tr>
-        <th> GT(w/o Style)</th>
-        <th> InstructTTS</th>
-        <th> PromptTTS</th>
-        <th> PromptStyle</th>
-        <th> ControlSpeech(Ours)</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/7/GT.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/7/InstructTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/7/PromptTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/7/PromptStyle.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/7/ControlSpeech.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>
-
-
-<p>
-<b>Content Prompt:</b> Once Layelah sat for some time silent and involved in thought.<br>
-<b>Style Prompt:</b> The speaker's low-pitched voice delivers speaker's message with a moderate level of energy and standard speaking speed.<br>
-<b>Voice Prompt:</b><audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/voice/8.wav" type="audio/mpeg"></audio>
-</p> 
-<table>
-    <tr>
-        <th> GT(w/o Style)</th>
-        <th> InstructTTS</th>
-        <th> PromptTTS</th>
-        <th> PromptStyle</th>
-        <th> ControlSpeech(Ours)</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/8/GT.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/8/InstructTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/8/PromptTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/8/PromptStyle.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/8/ControlSpeech.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>
-
-<p>
-<b>Content Prompt:</b> I see you just as feeble minded as you were before, and still expressing only despair!<br>
-<b>Style Prompt:</b> The speaker's high-energy speech is delivered swiftly, yet speaker's pitch remains steady.<br>
-<b>Voice Prompt:</b><audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/voice/9.wav" type="audio/mpeg"></audio>
-</p> 
-<table>
-    <tr>
-        <th> GT(w/o Style)</th>
-        <th> InstructTTS</th>
-        <th> PromptTTS</th>
-        <th> PromptStyle</th>
-        <th> ControlSpeech(Ours)</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/9/GT.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/9/InstructTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/9/PromptTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/9/PromptStyle.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/9/ControlSpeech.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>
-
-<p>
-<b>Content Prompt:</b> They'd never know I'd regular ran away.<br>
-<b>Style Prompt:</b> Speaker's speech maintains a usual pitch as speaker mournfully talks at a regular speed with a touch of standard energy.<br>
-<b>Voice Prompt:</b><audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/voice/10.wav" type="audio/mpeg"></audio>
-</p> 
-<table>
-    <tr>
-        <th> GT(w/o Style)</th>
-        <th> InstructTTS</th>
-        <th> PromptTTS</th>
-        <th> PromptStyle</th>
-        <th> ControlSpeech(Ours)</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/10/GT.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/10/InstructTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/10/PromptTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/10/PromptStyle.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/10/ControlSpeech.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>
-
-<p>
-<b>Content Prompt:</b> Hold up my chin, slow and solid.<br>
-<b>Style Prompt:</b> Speaking quickly and with a low-pitched voice, speaker amazedly embodies the liveliness associated with normalcy.<br>
-<b>Voice Prompt:</b><audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/voice/11.wav" type="audio/mpeg"></audio>
-</p> 
-<table>
-    <tr>
-        <th> GT(w/o Style)</th>
-        <th> InstructTTS</th>
-        <th> PromptTTS</th>
-        <th> PromptStyle</th>
-        <th> ControlSpeech(Ours)</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/11/GT.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/11/InstructTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/11/PromptTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/11/PromptStyle.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/11/ControlSpeech.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>
-
-<p>
-<b>Content Prompt:</b> It looks much better.<br>
-<b>Style Prompt:</b> Speaking rapidly in a low pitch, the surprised speaker's energy remains minimal.<br>
-<b>Voice Prompt:</b><audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/voice/12.wav" type="audio/mpeg"></audio>
-</p> 
-<table>
-    <tr>
-        <th> GT(w/o Style)</th>
-        <th> InstructTTS</th>
-        <th> PromptTTS</th>
-        <th> PromptStyle</th>
-        <th> ControlSpeech(Ours)</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/12/GT.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/12/InstructTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/12/PromptTTS.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/12/PromptStyle.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/baselines/12/ControlSpeech.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>
-
-## Style control for unseen speakers
-<p align="justify">We provide a series of audio to demonstrate ContorSpeech's ability to control the style of unseen speakers.</p>
-
-<p>
-<b>Content Prompt:</b> I was never in the county till my husband brought me here. Mrs Charmond did not care to pursue this line of investigation.
-<br>
-<b>Style Prompt:</b> The pitch of speaker's speech is within the norm.
-<br>
-<b>Voice Prompt:</b> Note that the timbre is derived from GT wav.
-</p> 
-<table>
-    <tr>
-        <th> GT wav</th>
-        <th> Generated wav</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/unseen/1/GT.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/unseen/1/Generated.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>
-
-<p>
-<b>Content Prompt:</b> It is made of silk or cotton.
-<br>
-<b>Style Prompt:</b> The speaker communicates with minimal energy.
-<br>
-<b>Voice Prompt:</b> Note that the timbre is derived from GT wav.
-</p> 
-<table>
-    <tr>
-        <th> GT wav</th>
-        <th> Generated wav</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/unseen/2/GT.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/unseen/2/Generated.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>
-
-<p>
-<b>Content Prompt:</b> She went away without saying any more.
-<br>
-<b>Style Prompt:</b> Speaking at a moderate speed, the speaker engages speaker's audience.
-<br>
-<b>Voice Prompt:</b> Note that the timbre is derived from GT wav.
-</p> 
-<table>
-    <tr>
-        <th> GT wav</th>
-        <th> Generated wav</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/unseen/3/GT.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/unseen/3/Generated.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>
-
-<p>
-<b>Content Prompt:</b> Such conduct didn't speak much for military discipline in those days.
-<br>
-<b>Style Prompt:</b> A speaker with a regular pitch talks swiftly, exuding a touch of moderate energy.
-<br>
-<b>Voice Prompt:</b> Note that the timbre is derived from GT wav.
-</p> 
-<table>
-    <tr>
-        <th> GT wav</th>
-        <th> Generated wav</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/unseen/4/GT.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/unseen/4/Generated.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>
-
-<p>
-<b>Content Prompt:</b> Once upon a time a mouse dwelt in the house of a merchant who owned much merchandise and great stories of monies.
-<br>
-<b>Style Prompt:</b>speaker's pitch is average, even though speaker's energy is low.
-<br>
-<b>Voice Prompt:</b> Note that the timbre is derived from GT wav.
-</p> 
-<table>
-    <tr>
-        <th> GT wav</th>
-        <th> Generated wav</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/unseen/5/GT.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/unseen/5/Generated.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>
-
-## Control of unseen styles
-<p align="justify">ControlSpeech supports transforming unseen styles.</p>
-
-<p>
-<b>Content Prompt:</b> It took her a long time to understand that he had actually spoken them.
-<br>
-<b>Style Prompt:</b>Speaking rapidly, the speaker's voice reverberated powerfully, striking a lower key.
-<br>
-<b>Voice Prompt:</b> Note that the timbre is derived from GT wav.
-</p> 
-<table>
-    <tr>
-        <th> GT wav</th>
-        <th> Generated wav</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/unseen style/1/GT.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/unseen style/1/Generated.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>
-
-<p>
-<b>Content Prompt:</b> No, I see.
-<br>
-<b>Style Prompt:</b>The speaker expressed slowly, the speaker's words booming loud but in a low, deep tone.
-<br>
-<b>Voice Prompt:</b> Note that the timbre is derived from GT wav.
-</p> 
-<table>
-    <tr>
-        <th> GT wav</th>
-        <th> Generated wav</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/unseen style/2/GT.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/unseen style/2/Generated.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>
-
-<p>
-<b>Content Prompt:</b> What's to be done?
-<br>
-<b>Style Prompt:</b>The speaker expressed with a sharp clarity, maintaining a steady flow and a low loudness.
-<br>
-<b>Voice Prompt:</b> Note that the timbre is derived from GT wav.
-</p> 
-<table>
-    <tr>
-        <th> GT wav</th>
-        <th> Generated wav</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/unseen style/3/GT.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/unseen style/3/Generated.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>
-
-<p>
-<b>Content Prompt:</b> "That's right", approved the great Personage, glancing down complacently over his double chin.
-<br>
-<b>Style Prompt:</b>The speaker spoke in a hurried, low murmur, each word soft but fast.
-<br>
-<b>Voice Prompt:</b> Note that the timbre is derived from GT wav.
-</p> 
-<table>
-    <tr>
-        <th> GT wav</th>
-        <th> Generated wav</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/unseen style/4/GT.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/unseen style/4/Generated.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>
-
-
-<p>
-<b>Content Prompt:</b> I am safe back again.
-<br>
-<b>Style Prompt:</b>The speaker's intonation, unhurried and barely audible, carried a deep-seated note.
-<br>
-<b>Voice Prompt:</b> Note that the timbre is derived from GT wav.
-</p> 
-<table>
-    <tr>
-        <th> GT wav</th>
-        <th> Generated wav</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/unseen style/5/GT.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/unseen style/5/Generated.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>
-
-
-## One timber with multiple styles
-<p align="justify">ControlSpeech allows multiple style controls using one timbre.</p>
-
-<p>
-<b>Content Prompt:</b> The patient and the surgeon are both recuperating from the lengthy operation.
-<br>
-<b>Voice Prompt:</b><audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/One speaker with multiple styles/Voice Prompt.wav" type="audio/mpeg"></audio>
-</p> 
-<table>
-    <tr>
-        <th> Style Prompt</th>
-        <th> Generated Wav</th>
-    </tr>
-    <tr>
-        <td> Speaking slowly, speaker maintains a steady pitch.</td>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/One speaker with multiple styles/Generated/1/1.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-    <tr>
-        <td> speaker's voice held a regular pitch as speaker engaged in dialogue at a normal tempo with average energy.</td>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/One speaker with multiple styles/Generated/2/2.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-    <tr>
-        <td> The speaker conveyed speaker's thoughts in a high-pitched voice at a normal pace, portraying a sense of low energy.</td>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/One speaker with multiple styles/Generated/3/3.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-    <tr>
-        <td> The speaker communicated in an ordinary pitch, talking with a hint of normal energy.</td>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/One speaker with multiple styles/add/37_215_000012_000000_4.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-    <tr>
-        <td> A deep-voiced speaker, speaking slowly and confidently, emanating a calm and collected energy with speaker's deliberate enunciation.</td>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/One speaker with multiple styles/add/283_130638_000058_000000_4.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-    <tr>
-        <td> A speaker's speech had a normal pitch, conveyed at a regular pace with average energy.</td>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/One speaker with multiple styles/add/7241_90852_000027_000005_4.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-    <tr>
-        <td> A contempt speaker communicates effectively with moderate energy.</td>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/One speaker with multiple styles/add/14874_4.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-    <tr>
-        <td> Sharing insights, speaker gleefully communicates with normal energy.</td>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/One speaker with multiple styles/add/40657_4.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-    <tr>
-        <td> The happy speaker spoke rapidly, speaker's tone remaining normal.</td>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/One speaker with multiple styles/add/52732_4.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>
-
-
-## Style control for multiple speakers
-<p align="justify">ControlSpeech can use multiple timbres to correspond to one style.</p>
-
-<p>
-<b>Content Prompt:</b> The patient and the surgeon are both recuperating from the lengthy operation.<br>
-<b>Style Prompt:</b> Her speaking rate is steady, and her contemptuous voice has a high pitch.
-<br>
-</p> 
-<table>
-    <tr>
-        <th> Speakers A</th>
-        <th> Speakers B</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/Style control for multiple speakers/High or Low Pitch; Normal Speed; Normal Energy/Speaker A with High Pitch.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/Style control for multiple speakers/High or Low Pitch; Normal Speed; Normal Energy/Speaker B with High Pitch.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-
-
-<p>
-<b>Content Prompt:</b> The patient and the surgeon are both recuperating from the lengthy operation.<br>
-<b>Style Prompt:</b> A scornful woman with a low-pitched voice spoke.
-<br>
-</p> 
-<table>
-    <tr>
-        <th> Speakers A</th>
-        <th> Speakers B</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/Style control for multiple speakers/High or Low Pitch; Normal Speed; Normal Energy/Speaker A with Low Pitch.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/Style control for multiple speakers/High or Low Pitch; Normal Speed; Normal Energy/Speaker B with Low Pitch.wav" type="audio/mpeg"></audio> </th>
-    </tr>
-</table>
-
-
-<p>
-<b>Content Prompt:</b> The patient and the surgeon are both recuperating from the lengthy operation.<br>
-<b>Style Prompt:</b> In her disdainful normal tone, she spoke rapidly.
-<br>
-</p> 
-<table>
-    <tr>
-        <th> Speakers A</th>
-        <th> Speakers B</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/Style control for multiple speakers/Normal Pitch; Fast or Slow Speed; Normal Energy/Speaker B with Fast Speed.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/Style control for multiple speakers/Normal Pitch; Fast or Slow Speed; Normal Energy/Speaker A with Fast Speed.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-
-
-<p>
-<b>Content Prompt:</b> The patient and the surgeon are both recuperating from the lengthy operation.<br>
-<b>Style Prompt:</b> The contemptuous woman's speech unfolds slowly, with a normal tone.
-<br>
-</p> 
-<table>
-    <tr>
-        <th> Speakers A</th>
-        <th> Speakers B</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/Style control for multiple speakers/Normal Pitch; Fast or Slow Speed; Normal Energy/Speaker B with Slow Speed.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/Style control for multiple speakers/Normal Pitch; Fast or Slow Speed; Normal Energy/Speaker A with Slow Speed.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-
-
-<p>
-<b>Content Prompt:</b> The patient and the surgeon are both recuperating from the lengthy operation.<br>
-<b>Style Prompt:</b> A dismissive woman with a loud voice speaks normally.
-<br>
-</p> 
-<table>
-    <tr>
-        <th> Speakers A</th>
-        <th> Speakers B</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/Style control for multiple speakers/Normal Pitch; Normal Speed; High or Low Energy/Speaker A with High Energy.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/Style control for multiple speakers/Normal Pitch; Normal Speed; High or Low Energy/Speaker B with High Energy.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-
-
-<p>
-<b>Content Prompt:</b> The patient and the surgeon are both recuperating from the lengthy operation.<br>
-<b>Style Prompt:</b> The contemptuous girl's energy is low, but she speaks with a typical speed.
-<br>
-</p> 
-<table>
-    <tr>
-        <th> Speakers A</th>
-        <th> Speakers B</th>
-    </tr>
-    <tr>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/Style control for multiple speakers/Normal Pitch; Normal Speed; High or Low Energy/Speaker A with Low Energy.wav" type="audio/mpeg"></audio> </th>
-        <th> <audio controls id="player" onplay="pauseOthers(this);"><source src="assets/audio/Style control for multiple speakers/Normal Pitch; Normal Speed; High or Low Energy/Speaker B with Low Energy.wav" type="audio/mpeg"></audio> </th>
-    </tr> 
-</table>
-<br>

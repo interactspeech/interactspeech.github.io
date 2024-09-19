@@ -1,0 +1,41 @@
+{
+    "original_dialog_id": "",
+    "dialog_index": 1004451,
+    "processed_dialogue": "A: Wow, we look amazing!\nB: I know, right? We should totally walk around like we [interrupt] we own the place and let everyone see how incredible we look.\nA: Actually, before we do that, do you think we should take some pictures first? I mean, we need to capture this moment!\nB: Absolutely! But after that, let's go show everyone how glamorous we are!\nA: I feel like a movie star!\nB: Me too! We should walk around like we're on a [interrupt] runway, making sure everyone notices our stunning outfits.\nA: Wait, let's make sure we have the perfect poses down before we start. We need to nail that red carpet look!\nB: Good idea! Let's start strutting our stuff!",
+    "speakerA_time": [
+        [
+            0,
+            40448
+        ],
+        [
+            112368,
+            260848
+        ],
+        [
+            345072,
+            381936
+        ],
+        [
+            450784,
+            598752
+        ]
+    ],
+    "speakerB_time": [
+        [
+            40448,
+            122368
+        ],
+        [
+            260848,
+            345072
+        ],
+        [
+            381936,
+            460784
+        ],
+        [
+            598752,
+            661728
+        ]
+    ]
+}
