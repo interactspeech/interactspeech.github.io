@@ -10,6 +10,10 @@ Shengpeng Ji<sup>*</sup>, Yifu Chen<sup>*</sup>, Xize Cheng<sup>*</sup>,
 Minghui Fang, Jialong Zuo, Wenrui Liu, Qian Chen, 
 Zhou Zhao<sup>✉</sup>
 </p>
+<p style="text-align: center; color: #336699; font-weight: bold;">
+Minghui Fang, Jialong Zuo, Wenrui Liu, Qian Chen, 
+Zhou Zhao<sup>✉</sup>
+</p>
 <p style="text-align: center; color: #333333;">
 <sup>*</sup>Equal contribution &nbsp;&nbsp; <sup>✉</sup>Corresponding author
 </p>
@@ -120,11 +124,11 @@ B: [Conversation content]
     <div style="margin-top: 20px;">
         <p style="font-size: 16px; font-weight: bold; color: #333;">Dialogue Transcript with Timestamps:</p>
         <div style="background-color: #fff; padding: 10px; border-radius: 5px;">
-            <p><span style="color: #1f3b64; font-weight: bold;">A (0s - 114.944s):</span> Thank you so much for everything, Miss Smith. I really appreciate all that you've done for [interrupt] helping me prepare for these exams.</p>
-            <p><span style="color: #1f3b64; font-weight: bold;">B (104.944s - 251.120s):</span> Oh, it was nothing. But before you go on, I wanted to ask—how are you feeling about the upcoming exams?</p>
-            <p><span style="color: #1f3b64; font-weight: bold;">A (251.120s - 411.888s):</span> I'm a bit nervous, to be honest. But your support has really helped me. I was just saying that you've helped me more than you know.</p>
-            <p><span style="color: #1f3b64; font-weight: bold;">B (411.888s - 528.624s):</span> I'm glad to hear that. Remember, you're a great student, Amar, and I have full confidence in you.</p>
-            <p><span style="color: #1f3b64; font-weight: bold;">A (528.624s - 553.968s):</span> Thank you, Miss Smith.</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">A (0s - 5.212s):</span> Thank you so much for everything, Miss Smith. I really appreciate all that you've done for [interrupt] helping me prepare for these exams.</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">B (4.759s - 11.388s):</span> Oh, it was nothing. But before you go on, I wanted to ask—how are you feeling about the upcoming exams?</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">A (11.388s - 18.679s):</span> I'm a bit nervous, to be honest. But your support has really helped me. I was just saying that you've helped me more than you know.</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">B (18.679s - 23.973s):</span> I'm glad to hear that. Remember, you're a great student, Amar, and I have full confidence in you.</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">A (23.973s - 25.123s):</span> Thank you, Miss Smith.</p>
         </div>
     </div>
 
@@ -162,14 +166,14 @@ B: [Conversation content]
     <div style="margin-top: 20px;">
         <p style="font-size: 16px; font-weight: bold; color: #333;">Dialogue Transcript with Timestamps:</p>
         <div style="background-color: #fff; padding: 10px; border-radius: 5px;">
-            <p><span style="color: #1f3b64; font-weight: bold;">A (0s - 40.448s):</span> Wow, we look amazing!</p>
-            <p><span style="color: #1f3b64; font-weight: bold;">B (40.448s - 122.368s):</span> I know, right? We should totally walk around like [interrupt] we own the place and let everyone see how incredible we look.</p>
-            <p><span style="color: #1f3b64; font-weight: bold;">A (112.368s - 260.848s):</span> Actually, before we do that, do you think we should take some pictures first? I mean, we need to capture this moment!</p>
-            <p><span style="color: #1f3b64; font-weight: bold;">B (260.848s - 345.072s):</span> Absolutely! But after that, let's go show everyone how glamorous we are!</p>
-            <p><span style="color: #1f3b64; font-weight: bold;">A (345.072s - 381.936s):</span> I feel like a movie star!</p>
-            <p><span style="color: #1f3b64; font-weight: bold;">B (381.936s - 460.784s):</span> Me too! We should walk around like we're on a [interrupt] runway, making sure everyone notices our stunning outfits.</p>
-            <p><span style="color: #1f3b64; font-weight: bold;">A (450.784s - 598.752s):</span> Wait, let's make sure we have the perfect poses down before we start. We need to nail that red carpet look!</p>
-            <p><span style="color: #1f3b64; font-weight: bold;">B (598.752s - 661.728s):</span> Good idea! Let's start strutting our stuff!</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">A (0s - 1.834s):</span> Wow, we look amazing!</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">B (1.834s - 5.549s):</span> I know, right? We should totally walk around like [interrupt] we own the place and let everyone see how incredible we look.</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">A (5.096s - 11.829s):</span> Actually, before we do that, do you think we should take some pictures first? I mean, we need to capture this moment!</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">B (11.829s - 15.649s):</span> Absolutely! But after that, let's go show everyone how glamorous we are!</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">A (15.649s - 17.321s):</span> I feel like a movie star!</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">B (17.321s - 20.897s):</span> Me too! We should walk around like we're on a [interrupt] runway, making sure everyone notices our stunning outfits.</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">A (20.443s - 27.154s):</span> Wait, let's make sure we have the perfect poses down before we start. We need to nail that red carpet look!</p>
+            <p><span style="color: #1f3b64; font-weight: bold;">B (27.154s - 30.010s):</span> Good idea! Let's start strutting our stuff!</p>
         </div>
     </div>
 
