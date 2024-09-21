@@ -7,8 +7,6 @@ title: "InteractSpeech: A Speech Dialogue Interaction Corpus for Speech Language
 <h2 style="text-align: center; color: #333333; font-weight: bold;">Authors</h2>
 <p style="text-align: center; color: #336699; font-weight: bold;">
 Shengpeng Ji<sup>*</sup>, Yifu Chen<sup>*</sup>, Xize Cheng<sup>*</sup>, 
-Minghui Fang, Jialong Zuo, Wenrui Liu, Qian Chen, 
-Zhou Zhao<sup>✉</sup>
 </p>
 <p style="text-align: center; color: #336699; font-weight: bold;">
 Minghui Fang, Jialong Zuo, Wenrui Liu, Qian Chen, 
