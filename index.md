@@ -15,11 +15,6 @@ Zhou Zhao<sup>✉</sup>
 <p style="text-align: center; color: #333333;">
 <sup>*</sup>Equal contribution &nbsp;&nbsp; <sup>✉</sup>Corresponding author
 </p>
-<p style="text-align: center;">
-<a href="#" style="color: #ff6600; text-decoration: none; font-weight: bold;">[Paper]</a> |
-<a href="#" style="color: #ff6600; text-decoration: none; font-weight: bold;">[Code]</a> 
-</p>
-
 
 ## Overview
 
