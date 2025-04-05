@@ -4,6 +4,7 @@ title: "InteractSpeech: A Speech Dialogue Interaction Corpus for Speech Language
 
 ---
 
+<!--
 <h2 style="text-align: center; color: #333333; font-weight: bold;">Authors</h2>
 <p style="text-align: center; color: #336699; font-weight: bold;">
 Shengpeng Ji<sup>*</sup>, Yifu Chen<sup>*</sup>, Xize Cheng<sup>*</sup>, 
@@ -15,6 +16,7 @@ Zhou Zhao<sup>✉</sup>
 <p style="text-align: center; color: #333333;">
 <sup>*</sup>Equal contribution &nbsp;&nbsp; <sup>✉</sup>Corresponding author
 </p>
+-->
 
 ## Overview
 
